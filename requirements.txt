@@ -1,4 +1,5 @@
 aiohttp
+textblob
 yfinance
 beautifulsoup4
 feedparser
