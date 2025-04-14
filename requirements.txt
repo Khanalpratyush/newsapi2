@@ -2,6 +2,7 @@ aiohttp
 yfinance
 beautifulsoup4
 feedparser
+playwright
 fastapi
 uvicorn
 python-dotenv
