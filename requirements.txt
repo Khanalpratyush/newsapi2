@@ -1,4 +1,5 @@
 aiohttp
+yfinance
 beautifulsoup4
 feedparser
 fastapi
