@@ -1,11 +1,32 @@
-from fastapi import FastAPI
-from routers import news
+from fastapi import FastAPI, Depends
+from routers import news, users, admin
 from typing import Dict, Any
+from auth import validate_api_key
+from fastapi.middleware.cors import CORSMiddleware
+from database import engine, Base
+from models import User
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 description = """
 # Finance News API 📈
 
 A powerful API that aggregates financial news and provides comprehensive market sentiment analysis.
+
+## Authentication
+All endpoints require API key authentication. Include your API key in the `X-API-Key` header with every request.
+
+Example:
+```python
+import requests
+
+headers = {
+    "X-API-Key": "your_api_key_here"
+}
+
+response = requests.get("http://localhost:8000/news/AAPL", headers=headers)
+```
 
 ## Features
 
@@ -118,15 +139,22 @@ app = FastAPI(
     }
 )
 
-# Include routers
-app.include_router(
-    news.router,
-    prefix="/news",
-    tags=["news"]
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(news.router, prefix="/api", tags=["news"], dependencies=[Depends(validate_api_key)])
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
+
 @app.get("/", response_model=Dict[str, Any], tags=["root"])
-async def root():
+async def root(api_key: str = Depends(validate_api_key)):
     """
     Root endpoint providing API information and available endpoints.
     
@@ -142,6 +170,11 @@ async def root():
             "redoc": "/redoc",
             "openapi_spec": "/openapi.json"
         },
+        "authentication": {
+            "type": "API Key",
+            "header": "X-API-Key",
+            "description": "All endpoints require a valid API key in the X-API-Key header"
+        },
         "endpoints": [
             {
                 "path": "/news/{ticker}",
@@ -153,7 +186,8 @@ async def root():
                     "time_range_hours": "Filter news from last N hours",
                     "sources": "List of news sources to include (yahoo, reuters, bloomberg, marketwatch, seekingalpha)"
                 },
-                "example": "/news/AAPL?sentiment_threshold=0.2&time_range_hours=24&sources=reuters,bloomberg"
+                "example": "/news/AAPL?sentiment_threshold=0.2&time_range_hours=24&sources=reuters,bloomberg",
+                "authentication": "Requires X-API-Key header"
             }
         ]
     } 

@@ -17,3 +17,5 @@ pytest-mock
 pytest-cov
 aioresponses
 responses
+jinja2
+sqlalchemy
