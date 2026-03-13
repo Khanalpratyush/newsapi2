@@ -1,15 +1,31 @@
-aiohttp
-textblob
-yfinance
-beautifulsoup4
-feedparser
-playwright
+# Web framework
 fastapi
-uvicorn
-python-dotenv
+uvicorn[standard]
+
+# Database
+sqlalchemy
+
+# Validation / serialisation
+pydantic[email]
+
+# HTTP & feed parsing (stdlib xml used for RSS; no feedparser needed)
+aiohttp
 requests
-brotli
 certifi
+
+# Sentiment analysis
+textblob
+
+# HTML parsing (used by legacy finance routes)
+beautifulsoup4
+
+# Config
+python-dotenv
+
+# Templating (admin UI)
+jinja2
+
+# Testing
 pytest
 httpx
 pytest-asyncio
@@ -17,5 +33,3 @@ pytest-mock
 pytest-cov
 aioresponses
 responses
-jinja2
-sqlalchemy

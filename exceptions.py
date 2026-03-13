@@ -1,31 +1,76 @@
+"""
+Structured error responses aligned with the News API PRD (section 5).
+
+All errors share the shape:
+    { "status": "error", "code": "<camelCase code>", "message": "..." }
+"""
 from fastapi import HTTPException
 
-class FinanceAPIError(HTTPException):
-    """Base exception for all Finance API errors."""
-    def __init__(self, status_code: int, detail: str):
-        super().__init__(status_code=status_code, detail=detail)
 
-class TickerValidationError(FinanceAPIError):
-    """Raised when ticker symbol validation fails."""
-    def __init__(self, detail: str):
-        super().__init__(status_code=400, detail=detail)
+class NewsAPIError(HTTPException):
+    """Base exception that produces a PRD-compliant JSON error body."""
 
-class DataFetchError(FinanceAPIError):
-    """Raised when there's an error fetching data from external sources."""
-    def __init__(self, detail: str):
-        super().__init__(status_code=503, detail=detail)
+    def __init__(self, status_code: int, code: str, message: str) -> None:
+        super().__init__(
+            status_code=status_code,
+            detail={"status": "error", "code": code, "message": message},
+        )
 
-class RateLimitError(FinanceAPIError):
-    """Raised when rate limits are exceeded."""
-    def __init__(self, detail: str):
-        super().__init__(status_code=429, detail=detail)
 
-class InvalidDataError(FinanceAPIError):
-    """Raised when received data is invalid or malformed."""
-    def __init__(self, detail: str):
-        super().__init__(status_code=422, detail=detail)
+# ── 4xx client errors ────────────────────────────────────────────────────────
 
-class AuthenticationError(FinanceAPIError):
-    """Raised when authentication fails."""
-    def __init__(self, detail: str):
-        super().__init__(status_code=401, detail=detail) 
+class ParameterInvalidError(NewsAPIError):
+    def __init__(self, message: str) -> None:
+        super().__init__(400, "parameterInvalid", message)
+
+
+class ParametersMissingError(NewsAPIError):
+    def __init__(self, message: str) -> None:
+        super().__init__(400, "parametersMissing", message)
+
+
+class ApiKeyMissingError(NewsAPIError):
+    def __init__(self) -> None:
+        super().__init__(401, "apiKeyMissing",
+                         "Your API key is missing.")
+
+
+class ApiKeyInvalidError(NewsAPIError):
+    def __init__(self) -> None:
+        super().__init__(401, "apiKeyInvalid",
+                         "Your API key is invalid.")
+
+
+class ApiKeyDisabledError(NewsAPIError):
+    def __init__(self) -> None:
+        super().__init__(401, "apiKeyDisabled",
+                         "Your API key has been disabled.")
+
+
+class ApiKeyExhaustedError(NewsAPIError):
+    def __init__(self) -> None:
+        super().__init__(403, "apiKeyExhausted",
+                         "You have used up all of your daily requests.")
+
+
+class PlanUpgradeRequiredError(NewsAPIError):
+    def __init__(self, message: str = "This feature is not available on your current plan.") -> None:
+        super().__init__(403, "planUpgradeRequired", message)
+
+
+class RateLimitedError(NewsAPIError):
+    def __init__(self) -> None:
+        super().__init__(429, "rateLimited",
+                         "You have exceeded your per-minute rate limit.")
+
+
+# ── 5xx server errors ────────────────────────────────────────────────────────
+
+class ServerError(NewsAPIError):
+    def __init__(self, message: str = "An internal server error occurred.") -> None:
+        super().__init__(500, "serverError", message)
+
+
+class DataFetchError(NewsAPIError):
+    def __init__(self, message: str = "Failed to fetch data from an upstream source.") -> None:
+        super().__init__(503, "dataFetchError", message)
